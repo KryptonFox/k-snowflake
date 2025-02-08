@@ -3,7 +3,7 @@ use crate::utils::{sys_time_millis, time_since_epoch};
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Snowflake {
     pub timestamp: u64,
     pub instance: u16,
@@ -60,30 +60,27 @@ impl Snowflake {
         sys_time_millis() + TWITTER_EPOCH + self.timestamp
     }
 
-    pub fn to_decimal(&self) -> Result<u64, String> {
-        Ok(u64::from_str_radix(self.to_bin()?.as_str(), 2).unwrap())
+    pub fn to_decimal(&self) -> Result<i64, String> {
+        self.produce()
     }
 
     pub fn to_bin(&self) -> Result<String, String> {
-        let timestamp_bin = format!("{:b}", self.timestamp);
-        if timestamp_bin.chars().count() > TIMESTAMP_BYTES {
-            return Err("Timestamp too long".to_string());
-        }
+        Ok(format!("{:b}", self.produce()?).to_string())
+    }
 
-        let instance_bin = format!("{:b}", self.instance);
-        if instance_bin.chars().count() > INSTANCE_BYTES {
-            return Err("Timestamp too long".to_string());
+    fn produce(&self) -> Result<i64, String> {
+        if self.instance >= 2u16.pow(INSTANCE_BYTES) {
+            return Err("Instance too long. Must be 10 bits".to_string());
         }
-
-        let sequence_bin = format!("{:b}", self.sequence);
-        if sequence_bin.chars().count() > SEQUENCE_BYTES {
-            return Err("Timestamp too long".to_string());
+        if self.sequence >= 2u16.pow(SEQUENCE_BYTES) {
+            return Err("Sequence too long. Must be 12 bits".to_string());
         }
-
-        Ok(format!(
-            "0{:0>41}{:0>10}{:0>12}",
-            timestamp_bin, instance_bin, sequence_bin
-        ))
+        let mut snowflake = self.timestamp as i64;
+        snowflake <<= INSTANCE_BYTES;
+        snowflake += self.instance as i64;
+        snowflake <<= SEQUENCE_BYTES;
+        snowflake += self.sequence as i64;
+        Ok(snowflake)
     }
 }
 
@@ -106,16 +103,14 @@ impl FromStr for Snowflake {
     type Err = SnowflakeParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let snowflake: u64 = s.parse().map_err(|_| SnowflakeParseError)?;
-        let mut snowflake_bin = format!("{:b}", snowflake);
-        snowflake_bin = format!("0{:0>63}", snowflake_bin);
-        dbg!(&snowflake_bin);
-        let timestamp =
-            u64::from_str_radix(&snowflake_bin[..42], 2).map_err(|_| SnowflakeParseError)?;
-        let instance =
-            u16::from_str_radix(&snowflake_bin[42..52], 2).map_err(|_| SnowflakeParseError)?;
-        let sequence =
-            u16::from_str_radix(&snowflake_bin[52..], 2).map_err(|_| SnowflakeParseError)?;
+        let mut snowflake: i64 = s.parse().map_err(|_| SnowflakeParseError)?;
+
+        let sequence = (snowflake & 0b1111_1111_1111) as u16;
+        snowflake >>= SEQUENCE_BYTES;
+        let instance = (snowflake & 0b11_1111_1111) as u16;
+        snowflake >>= INSTANCE_BYTES;
+        let timestamp = snowflake as u64;
+
         Ok(Self {
             timestamp,
             instance,
