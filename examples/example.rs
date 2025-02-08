@@ -2,10 +2,10 @@ use k_snowflake::Snowflake;
 
 fn main() {
     // Create snowflake
-    let snowflake = Snowflake::new(123, 123);
+    let snowflake = Snowflake::new(598, 1073);
 
     // convert to decimal
-    let decimal_snowflake = snowflake.to_decimal().unwrap();
+    let _decimal_snowflake = snowflake.to_decimal().unwrap();
 
     // supports display
     println!("{}", snowflake);
