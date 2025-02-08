@@ -5,3 +5,5 @@ authors = ["KryptonFox"]
 edition = "2021"
 readme = "README.md"
 license = "MIT"
+repository = "https://github.com/KryptonFox/k-snowflake"
+homepage = "https://github.com/KryptonFox/k-snowflake"
