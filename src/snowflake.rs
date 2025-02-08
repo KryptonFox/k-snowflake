@@ -99,12 +99,6 @@ impl fmt::Binary for Snowflake {
     }
 }
 
-impl ToString for Snowflake {
-    fn to_string(&self) -> String {
-        self.to_decimal().unwrap().to_string()
-    }
-}
-
 #[derive(Debug)]
 pub struct SnowflakeParseError;
 
