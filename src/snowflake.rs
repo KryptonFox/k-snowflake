@@ -1,98 +1,73 @@
 use crate::constants::*;
-use crate::utils::{sys_time_millis, time_since_epoch};
+use crate::context::CONTEXT;
+use crate::utils::time_since_epoch;
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, Default, PartialEq)]
+/// Snowflake structure
+#[derive(Debug, Default, PartialEq, Copy, Clone)]
 pub struct Snowflake {
+    /// Timestamp in ms since snowflake epoch start
     pub timestamp: u64,
+    /// Instance of the snowflake (see schema in readme)
     pub instance: u16,
+    /// Sequence of the snowflake (see schema in readme)
     pub sequence: u16,
 }
 
 impl Snowflake {
-    /// New snowflake based twitter`s epoch and local time
-    pub fn new(instance: u16, sequence: u16) -> Self {
-        Self {
-            timestamp: time_since_epoch(TWITTER_EPOCH),
-            instance,
-            sequence,
-        }
-    }
-
-    /// New snowflake based twitter`s epoch and given timestamp
-    pub fn from_timestamp(timestamp: u64, instance: u16, sequence: u16) -> Self {
+    /// New snowflake
+    pub fn new(timestamp: u64, instance: u16, sequence: u16) -> Self {
         Self {
             timestamp,
-            instance,
-            sequence,
+            instance: instance % 2u16.pow(INSTANCE_BYTES),
+            sequence: sequence % 2u16.pow(SEQUENCE_BYTES),
         }
     }
-
-    /// New snowflake based given epoch and local time.
-    /// Provide UNIX time milliseconds since the chosen epoch
-    pub fn with_epoch(epoch_millis: u64, instance: u16, sequence: u16) -> Self {
-        Self {
-            timestamp: time_since_epoch(epoch_millis),
-            instance,
-            sequence,
+    
+    /// New snowflake based on context values
+    pub fn from_context() -> Self {
+        let mut ctx = CONTEXT.lock().unwrap();
+        if ctx.sequence_autoincrement {
+            ctx.increment();
         }
+        Self::new(time_since_epoch(&ctx.epoch), ctx.instance, ctx.sequence - 1)
     }
 
-    /// New snowflake based given epoch and given timestamp.
-    /// Provide UNIX time milliseconds since the chosen epoch.
-    /// Provide UNIX timestamp
-    pub fn with_epoch_and_timestamp(
-        epoch_millis: u64,
-        timestamp: u64,
-        instance: u16,
-        sequence: u16,
-    ) -> Self {
-        Self {
-            timestamp: timestamp - epoch_millis,
-            instance,
-            sequence,
-        }
-    }
-
-    /// Return millis since UNIX epoch using Twitter epoch and current timestamp
+    /// Return UNIX timestamp in ms of snowflake
     pub fn get_unix_timestamp(&self) -> u64 {
-        sys_time_millis() + TWITTER_EPOCH + self.timestamp
+        CONTEXT.lock().unwrap().epoch.start + self.timestamp
     }
 
-    pub fn to_decimal(&self) -> Result<i64, String> {
+    /// Return decimal value of snowflake
+    pub fn to_decimal(&self) -> i64 {
         self.produce()
     }
 
-    pub fn to_bin(&self) -> Result<String, String> {
-        Ok(format!("{:b}", self.produce()?).to_string())
+    /// Return binary string of snowflake
+    pub fn to_bin(&self) -> String {
+        format!("{:b}", self.produce()).to_string()
     }
 
-    fn produce(&self) -> Result<i64, String> {
-        if self.instance >= 2u16.pow(INSTANCE_BYTES) {
-            return Err("Instance too long. Must be 10 bits".to_string());
-        }
-        if self.sequence >= 2u16.pow(SEQUENCE_BYTES) {
-            return Err("Sequence too long. Must be 12 bits".to_string());
-        }
+    fn produce(&self) -> i64 {
         let mut snowflake = self.timestamp as i64;
         snowflake <<= INSTANCE_BYTES;
-        snowflake += self.instance as i64;
+        snowflake += (self.instance % 2u16.pow(INSTANCE_BYTES)) as i64;
         snowflake <<= SEQUENCE_BYTES;
-        snowflake += self.sequence as i64;
-        Ok(snowflake)
+        snowflake += (self.sequence % 2u16.pow(SEQUENCE_BYTES)) as i64;
+        snowflake
     }
 }
 
 impl fmt::Display for Snowflake {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_decimal().unwrap())
+        write!(f, "{}", self.to_decimal())
     }
 }
 
 impl fmt::Binary for Snowflake {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_bin().unwrap())
+        write!(f, "{}", self.to_bin())
     }
 }
 

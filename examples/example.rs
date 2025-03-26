@@ -1,12 +1,21 @@
-use k_snowflake::Snowflake;
+use k_snowflake::{create_snowflake, set_epoch, Snowflake, DISCORD_EPOCH};
 
 fn main() {
     // Create snowflake
-    let snowflake = Snowflake::new(598, 1073);
-
-    // convert to decimal
-    let _decimal_snowflake = snowflake.to_decimal().unwrap();
-
-    // supports display
+    let snowflake = create_snowflake();
     println!("{}", snowflake);
+
+    // change epoch
+    set_epoch(DISCORD_EPOCH);
+    let snowflake = create_snowflake();
+    println!("{}", snowflake);
+
+    // get UNIX timestamp of discord snowflake
+    println!(
+        "{}",
+        "1301619246953926811"
+            .parse::<Snowflake>()
+            .unwrap()
+            .get_unix_timestamp()
+    );
 }
