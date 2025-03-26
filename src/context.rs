@@ -23,7 +23,7 @@ impl Context {
     }
 
     pub fn increment(&mut self) {
-        self.sequence = self.sequence + 1 % (2u16.pow(SEQUENCE_BYTES) as u16)
+        self.sequence = (self.sequence + 1) % (2u16.pow(SEQUENCE_BYTES) as u16)
     }
 }
 
