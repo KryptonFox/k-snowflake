@@ -24,14 +24,15 @@ impl Snowflake {
             sequence: sequence % 2u16.pow(SEQUENCE_BYTES),
         }
     }
-    
+
     /// New snowflake based on context values
     pub fn from_context() -> Self {
         let mut ctx = CONTEXT.lock().unwrap();
+        let snowflake = Snowflake::new(time_since_epoch(&ctx.epoch), ctx.instance, ctx.sequence);
         if ctx.sequence_autoincrement {
             ctx.increment();
         }
-        Self::new(time_since_epoch(&ctx.epoch), ctx.instance, ctx.sequence - 1)
+        snowflake
     }
 
     /// Return UNIX timestamp in ms of snowflake
