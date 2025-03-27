@@ -13,6 +13,7 @@ pub use context::{
 };
 pub use constants::{TWITTER_EPOCH, DISCORD_EPOCH};
 
+/// Basic creating snowflake using context
 pub fn create_snowflake() -> Snowflake {
     Snowflake::from_context()
 }
