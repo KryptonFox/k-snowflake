@@ -1,6 +1,6 @@
 [package]
 name = "k-snowflake"
-version = "2.0.0"
+version = "2.0.1"
 authors = ["KryptonFox"]
 edition = "2021"
 readme = "README.md"
