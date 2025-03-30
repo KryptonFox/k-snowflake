@@ -1,4 +1,4 @@
-use crate::constants::{SEQUENCE_BYTES, TWITTER_EPOCH};
+use crate::constants::{INSTANCE_BYTES, SEQUENCE_BYTES, TWITTER_EPOCH};
 use crate::epoch::Epoch;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
@@ -16,14 +16,14 @@ impl Context {
     fn new() -> Self {
         Self {
             epoch: TWITTER_EPOCH,
+            instance: (std::process::id() % 2u32.pow(INSTANCE_BYTES)) as u16,
             sequence: 0,
-            instance: 0,
             sequence_autoincrement: true,
         }
     }
 
     pub fn increment(&mut self) {
-        self.sequence = (self.sequence + 1) % (2u16.pow(SEQUENCE_BYTES) as u16)
+        self.sequence = (self.sequence + 1) % 2u16.pow(SEQUENCE_BYTES)
     }
 }
 
