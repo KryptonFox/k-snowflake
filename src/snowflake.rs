@@ -53,9 +53,9 @@ impl Snowflake {
     fn produce(&self) -> i64 {
         let mut snowflake = self.timestamp as i64;
         snowflake <<= INSTANCE_BYTES;
-        snowflake += (self.instance % 2u16.pow(INSTANCE_BYTES)) as i64;
+        snowflake |= (self.instance % 2u16.pow(INSTANCE_BYTES)) as i64;
         snowflake <<= SEQUENCE_BYTES;
-        snowflake += (self.sequence % 2u16.pow(SEQUENCE_BYTES)) as i64;
+        snowflake |= (self.sequence % 2u16.pow(SEQUENCE_BYTES)) as i64;
         snowflake
     }
 }
