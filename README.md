@@ -3,7 +3,7 @@
 ---
 
 Simple one-dependency implementation of Twitter`s (X) snowflake in rust. Compatible with discord snowflakes. Firstly used for my projects.
-One snowflake creation take ~127ns. See /benches.
+One snowflake creation take ~52ns. See /benches.
 
 > Twitter snowflake schema
 
