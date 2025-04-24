@@ -10,7 +10,7 @@ fn bench(c: &mut Criterion) {
 
 criterion_group!{
     name = benches;
-    config = Criterion::default().sample_size(10000).measurement_time(Duration::from_secs(30));
+    config = Criterion::default().sample_size(1000).measurement_time(Duration::from_secs(10));
     targets = bench
 }
 criterion_main!(benches);
