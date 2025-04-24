@@ -1,8 +1,9 @@
 use crate::constants::*;
-use crate::context::CONTEXT;
+use crate::context::{sequence_increment, CONTEXT};
 use crate::utils::time_since_epoch;
 use std::fmt;
 use std::str::FromStr;
+use std::sync::atomic::Ordering;
 
 /// Snowflake structure
 #[derive(Debug, Default, PartialEq, Copy, Clone)]
@@ -27,17 +28,20 @@ impl Snowflake {
 
     /// New snowflake based on context values
     pub fn from_context() -> Self {
-        let mut ctx = CONTEXT.lock().unwrap();
-        let snowflake = Snowflake::new(time_since_epoch(&ctx.epoch), ctx.instance, ctx.sequence);
-        if ctx.sequence_autoincrement {
-            ctx.sequence_increment();
+        let snowflake = Snowflake::new(
+            time_since_epoch(CONTEXT.epoch_start.load(Ordering::Relaxed)),
+            CONTEXT.instance.load(Ordering::Relaxed),
+            CONTEXT.sequence.load(Ordering::Relaxed),
+        );
+        if CONTEXT.sequence_autoincrement.load(Ordering::Relaxed) {
+            sequence_increment();
         }
         snowflake
     }
 
     /// Return UNIX timestamp in ms of snowflake
     pub fn get_unix_timestamp(&self) -> u64 {
-        CONTEXT.lock().unwrap().epoch.start + self.timestamp
+        CONTEXT.epoch_start.load(Ordering::Relaxed) + self.timestamp
     }
 
     /// Return decimal value of snowflake

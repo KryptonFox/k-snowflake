@@ -1,50 +1,52 @@
-use crate::constants::{INSTANCE_BYTES, SEQUENCE_BYTES, TWITTER_EPOCH};
-use crate::epoch::Epoch;
+use crate::constants::{INSTANCE_BYTES, SEQUENCE_BYTES, TWITTER_EPOCH_START};
 use once_cell::sync::Lazy;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering};
+use std::sync::Arc;
 
-pub static CONTEXT: Lazy<Mutex<Context>> = Lazy::new(|| Mutex::new(Context::new()));
+pub static CONTEXT: Lazy<Arc<Context>> = Lazy::new(|| Arc::new(Context::new()));
 
 pub struct Context {
-    pub epoch: Epoch,
-    pub sequence: u16,
-    pub instance: u16,
-    pub sequence_autoincrement: bool,
+    pub epoch_start: AtomicU64,
+    pub sequence: AtomicU16,
+    pub instance: AtomicU16,
+    pub sequence_autoincrement: AtomicBool,
 }
 
 impl Context {
     fn new() -> Self {
         Self {
-            epoch: TWITTER_EPOCH,
-            instance: (std::process::id() % 2u32.pow(INSTANCE_BYTES)) as u16,
-            sequence: 0,
-            sequence_autoincrement: true,
+            epoch_start: AtomicU64::new(TWITTER_EPOCH_START),
+            instance: AtomicU16::new((std::process::id() % 2u32.pow(INSTANCE_BYTES)) as u16),
+            sequence: AtomicU16::new(0),
+            sequence_autoincrement: AtomicBool::new(true),
         }
     }
+}
 
-    pub fn sequence_increment(&mut self) {
-        self.sequence = (self.sequence + 1) % 2u16.pow(SEQUENCE_BYTES)
-    }
+pub fn sequence_increment() {
+    CONTEXT.sequence.store(
+        (CONTEXT.sequence.load(Ordering::Relaxed) + 1) % 2u16.pow(SEQUENCE_BYTES),
+        Ordering::Relaxed,
+    );
 }
 
 pub fn set_instance(instance: u16) {
-    let mut ctx = CONTEXT.lock().unwrap();
-    ctx.instance = instance
+    CONTEXT.instance.store(instance, Ordering::Relaxed);
 }
 
 pub fn set_sequence(sequence: u16) {
-    let mut ctx = CONTEXT.lock().unwrap();
-    ctx.sequence = sequence
+    CONTEXT.sequence.store(sequence, Ordering::Relaxed);
 }
 
 /// Set sequence number autoincrement on every snowflake creation from context.
 /// Default: true
 pub fn set_sequence_autoincrement(sequence_autoincrement: bool) {
-    let mut ctx = CONTEXT.lock().unwrap();
-    ctx.sequence_autoincrement = sequence_autoincrement
+    CONTEXT
+        .sequence_autoincrement
+        .store(sequence_autoincrement, Ordering::Relaxed);
 }
 
-pub fn set_epoch(epoch: Epoch) {
-    let mut ctx = CONTEXT.lock().unwrap();
-    ctx.epoch = epoch
+pub fn set_epoch(epoch: u64) {
+    // *CONTEXT.epoch_start.write().unwrap() = epoch;
+    CONTEXT.epoch_start.store(epoch, Ordering::Relaxed);
 }

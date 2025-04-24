@@ -1,4 +1,4 @@
-use k_snowflake::{create_snowflake, set_epoch, Snowflake, DISCORD_EPOCH};
+use k_snowflake::{create_snowflake, set_epoch, Snowflake, DISCORD_EPOCH_START};
 
 fn main() {
     // Create snowflake
@@ -6,7 +6,7 @@ fn main() {
     println!("{}", snowflake);
 
     // change epoch
-    set_epoch(DISCORD_EPOCH);
+    set_epoch(DISCORD_EPOCH_START);
     let snowflake = create_snowflake();
     println!("{}", snowflake);
 
