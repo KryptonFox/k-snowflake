@@ -22,7 +22,7 @@ impl Context {
         }
     }
 
-    pub fn increment(&mut self) {
+    pub fn sequence_increment(&mut self) {
         self.sequence = (self.sequence + 1) % 2u16.pow(SEQUENCE_BYTES)
     }
 }

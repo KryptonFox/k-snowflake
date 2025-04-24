@@ -30,7 +30,7 @@ impl Snowflake {
         let mut ctx = CONTEXT.lock().unwrap();
         let snowflake = Snowflake::new(time_since_epoch(&ctx.epoch), ctx.instance, ctx.sequence);
         if ctx.sequence_autoincrement {
-            ctx.increment();
+            ctx.sequence_increment();
         }
         snowflake
     }
