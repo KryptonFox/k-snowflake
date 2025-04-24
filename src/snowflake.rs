@@ -21,8 +21,8 @@ impl Snowflake {
     pub fn new(timestamp: u64, instance: u16, sequence: u16) -> Self {
         Self {
             timestamp,
-            instance: instance % 2u16.pow(INSTANCE_BYTES),
-            sequence: sequence % 2u16.pow(SEQUENCE_BYTES),
+            instance,
+            sequence,
         }
     }
 
@@ -57,9 +57,9 @@ impl Snowflake {
     fn produce(&self) -> i64 {
         let mut snowflake = self.timestamp as i64;
         snowflake <<= INSTANCE_BYTES;
-        snowflake |= (self.instance % 2u16.pow(INSTANCE_BYTES)) as i64;
+        snowflake |= (self.instance & 0x3FF) as i64;
         snowflake <<= SEQUENCE_BYTES;
-        snowflake |= (self.sequence % 2u16.pow(SEQUENCE_BYTES)) as i64;
+        snowflake |= (self.sequence & 0xFFF) as i64;
         snowflake
     }
 }
@@ -85,9 +85,9 @@ impl FromStr for Snowflake {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut snowflake: i64 = s.parse().map_err(|_| SnowflakeParseError)?;
 
-        let sequence = (snowflake & 0b1111_1111_1111) as u16;
+        let sequence = (snowflake & 0xFFF) as u16;
         snowflake >>= SEQUENCE_BYTES;
-        let instance = (snowflake & 0b11_1111_1111) as u16;
+        let instance = (snowflake & 0x3FF) as u16;
         snowflake >>= INSTANCE_BYTES;
         let timestamp = snowflake as u64;
 

@@ -1,4 +1,4 @@
-use crate::constants::{INSTANCE_BYTES, SEQUENCE_BYTES, TWITTER_EPOCH_START};
+use crate::constants::TWITTER_EPOCH_START;
 use once_cell::sync::Lazy;
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -16,7 +16,7 @@ impl Context {
     fn new() -> Self {
         Self {
             epoch_start: AtomicU64::new(TWITTER_EPOCH_START),
-            instance: AtomicU16::new((std::process::id() % 2u32.pow(INSTANCE_BYTES)) as u16),
+            instance: AtomicU16::new((std::process::id() & 0x3FF) as u16),
             sequence: AtomicU16::new(0),
             sequence_autoincrement: AtomicBool::new(true),
         }
@@ -25,7 +25,7 @@ impl Context {
 
 pub fn sequence_increment() {
     CONTEXT.sequence.store(
-        (CONTEXT.sequence.load(Ordering::Relaxed) + 1) % 2u16.pow(SEQUENCE_BYTES),
+        (CONTEXT.sequence.load(Ordering::Relaxed) + 1) & 0xFFF,
         Ordering::Relaxed,
     );
 }
